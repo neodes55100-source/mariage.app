@@ -16,7 +16,8 @@ if 'READ_MEDIA_IMAGES' not in text:
         '<manifest xmlns:android="http://schemas.android.com/apk/res/android">',
         '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n    ' + perms,
     )
-text = re.sub(r'android:label="[^"]*"', 'android:label="Mariage E & J"', text, count=1)
+# XML requires the ampersand in attribute values to be escaped.
+text = re.sub(r'android:label="[^"]*"', 'android:label="Mariage E &amp; J"', text, count=1)
 manifest.write_text(text)
 
 plist = Path('ios/Runner/Info.plist')
