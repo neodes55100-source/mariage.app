@@ -62,7 +62,7 @@ class UploadService {
     final session = await _openSiteSession();
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('${AppConfig.siteBaseUrl}/api/upload.php'),
+      Uri.parse('${AppConfig.siteBaseUrl}/api/uploads.php'),
     );
 
     request.headers['Cookie'] = session.cookie;
