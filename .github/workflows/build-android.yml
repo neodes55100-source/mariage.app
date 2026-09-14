@@ -20,7 +20,9 @@ jobs:
         run: flutter create --project-name mariage_app --org fr.creemachanson --platforms android .
 
       - name: Patch Android permissions, package and icon
-        run: bash tool/patch_native.sh
+        run: |
+          bash tool/patch_native.sh
+          sed -i '/const _paper =/d' lib/main.dart
 
       - name: Install dependencies
         run: flutter pub get
