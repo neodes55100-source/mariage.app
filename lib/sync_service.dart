@@ -6,6 +6,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app_config.dart';
 import 'upload_service.dart';
 
+// main.dart reçoit un PermissionState via ce service sans importer directement
+// photo_manager. Cette extension garde un test d'accès explicite côté interface.
+extension PermissionStateCompat on PermissionState {
+  bool get hasAccess =>
+      this == PermissionState.authorized || this == PermissionState.limited;
+}
+
 class SyncReport {
   final int found;
   final int uploaded;
