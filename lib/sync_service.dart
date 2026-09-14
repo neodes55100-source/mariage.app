@@ -111,7 +111,8 @@ class SyncService {
       await PhotoManager.setIgnorePermissionCheck(true);
     } else {
       final permission = await PhotoManager.requestPermissionExtend();
-      if (!permission.hasAccess) {
+      if (permission != PermissionState.authorized &&
+          permission != PermissionState.limited) {
         throw FileSystemException('Accès aux photos et vidéos refusé.');
       }
     }
