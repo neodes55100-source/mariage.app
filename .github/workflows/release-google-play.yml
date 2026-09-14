@@ -1,0 +1,71 @@
+name: Release Android Google Play
+
+on:
+  workflow_dispatch:
+
+jobs:
+  android-play:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate native projects
+        run: flutter create --project-name mariage_app --org fr.creemachanson --platforms android,ios .
+
+      - name: Patch permissions and app metadata
+        run: bash tool/patch_native.sh
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check Google Play signing secrets
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_B64" || (echo "ANDROID_UPLOAD_KEYSTORE_BASE64 manquant" && exit 1)
+          test -n "$STORE_PASSWORD" || (echo "ANDROID_KEYSTORE_PASSWORD manquant" && exit 1)
+          test -n "$KEY_ALIAS" || (echo "ANDROID_KEY_ALIAS manquant" && exit 1)
+          test -n "$KEY_PASSWORD" || (echo "ANDROID_KEY_PASSWORD manquant" && exit 1)
+
+      - name: Restore release keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_B64" | base64 --decode > android/app/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=upload-keystore.jks
+          EOF
+
+      - name: Enable release signing
+        run: python3 tool/patch_android_release_signing.py
+
+      - name: Analyze app code
+        run: flutter analyze lib
+
+      - name: Build signed APK
+        run: flutter build apk --release
+
+      - name: Build signed App Bundle
+        run: flutter build appbundle --release
+
+      - name: Upload Play-ready builds
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mariage-Android-Google-Play
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
