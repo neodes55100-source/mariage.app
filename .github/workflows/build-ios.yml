@@ -23,21 +23,47 @@ jobs:
       - name: Patch FilePicker for Xcode 26
         shell: bash
         run: |
-          PICKER_FILE="$(find "$HOME/.pub-cache/hosted/pub.dev" -path '*/file_picker-10.3.10/ios/file_picker/Sources/file_picker/FilePickerDelegate.swift' -print -quit)"
-          if [ -z "$PICKER_FILE" ]; then
-            echo "FilePickerDelegate.swift introuvable"
-            exit 1
-          fi
-          python3 - "$PICKER_FILE" <<'PY'
-          import pathlib
+          python3 <<'PY'
+          import json
           import re
-          import sys
+          from pathlib import Path
+          from urllib.parse import unquote, urlparse
 
-          path = pathlib.Path(sys.argv[1])
-          text = path.read_text()
-          text = re.sub(r'(?<!Foundation\.)\bFileManager\b', 'Foundation.FileManager', text)
-          path.write_text(text)
-          print(f"Patched: {path}")
+          config_path = Path('.dart_tool/package_config.json').resolve()
+          config = json.loads(config_path.read_text())
+          packages = [
+              package for package in config.get('packages', [])
+              if package.get('name', '').startswith('file_picker')
+          ]
+
+          if not packages:
+              raise SystemExit('FilePicker absent du package_config')
+
+          swift_files = []
+          for package in packages:
+              root_uri = package.get('rootUri', '')
+              parsed = urlparse(root_uri)
+              if parsed.scheme == 'file':
+                  root = Path(unquote(parsed.path))
+              else:
+                  root = (config_path.parent / unquote(root_uri)).resolve()
+              if root.exists():
+                  swift_files.extend(root.rglob('*.swift'))
+
+          changed = 0
+          for path in swift_files:
+              text = path.read_text()
+              patched = re.sub(
+                  r'(?<!Foundation\.)\bFileManager\b',
+                  'Foundation.FileManager',
+                  text,
+              )
+              if patched != text:
+                  path.write_text(patched)
+                  changed += 1
+                  print(f'Patched: {path}')
+
+          print(f'FilePicker Swift files found: {len(swift_files)}; patched: {changed}')
           PY
       - name: Prepare iOS project
         run: flutter build ios --release --config-only --no-codesign
