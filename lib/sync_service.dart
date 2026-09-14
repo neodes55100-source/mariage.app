@@ -126,6 +126,7 @@ class SyncService {
               guestName: guestName,
               originalName: asset.title,
               mimeType: asset.mimeType,
+              uploadSource: 'automatic',
             );
             if (result.ok) {
               uploaded++;
