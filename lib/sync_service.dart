@@ -6,6 +6,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app_config.dart';
 import 'upload_service.dart';
 
+class PhotoPermissionResult {
+  final PermissionState state;
+
+  const PhotoPermissionResult(this.state);
+
+  bool get hasAccess =>
+      state == PermissionState.authorized || state == PermissionState.limited;
+}
+
 class SyncReport {
   final int found;
   final int uploaded;
@@ -69,8 +78,9 @@ class SyncService {
     await prefs.remove(_personalAutoEndKey);
   }
 
-  static Future<PermissionState> requestPhotoPermission() {
-    return PhotoManager.requestPermissionExtend();
+  static Future<PhotoPermissionResult> requestPhotoPermission() async {
+    final state = await PhotoManager.requestPermissionExtend();
+    return PhotoPermissionResult(state);
   }
 
   static DateTime _effectiveEnd(DateTime? personalEnd) {
