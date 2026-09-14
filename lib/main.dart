@@ -332,7 +332,7 @@ class _WeddingShellState extends State<WeddingShell>
     final name = await _guestName();
     if (name == null) return;
 
-    final picked = await FilePicker.pickFiles(
+    final picked = await FilePicker.platform.pickFiles(
       type: FileType.media,
       allowMultiple: true,
       withData: false,
