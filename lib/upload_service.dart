@@ -57,6 +57,7 @@ class UploadService {
     required String guestName,
     String? originalName,
     String? mimeType,
+    String uploadSource = 'manual',
   }) async {
     final session = await _openSiteSession();
     final request = http.MultipartRequest(
@@ -70,6 +71,7 @@ class UploadService {
     request.fields['csrf'] = session.csrf;
     request.fields['guest_name'] = guestName.trim();
     request.fields['website'] = '';
+    request.fields['upload_source'] = uploadSource == 'automatic' ? 'automatic' : 'manual';
 
     MediaType? mediaType;
     if (mimeType != null && mimeType.contains('/')) {
