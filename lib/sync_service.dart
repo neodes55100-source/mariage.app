@@ -6,11 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app_config.dart';
 import 'upload_service.dart';
 
-extension PermissionStateCompat on PermissionState {
-  bool get hasAccess =>
-      this == PermissionState.authorized || this == PermissionState.limited;
-}
-
 class SyncReport {
   final int found;
   final int uploaded;
@@ -111,8 +106,7 @@ class SyncService {
       await PhotoManager.setIgnorePermissionCheck(true);
     } else {
       final permission = await PhotoManager.requestPermissionExtend();
-      if (permission != PermissionState.authorized &&
-          permission != PermissionState.limited) {
+      if (!permission.hasAccess) {
         throw FileSystemException('Accès aux photos et vidéos refusé.');
       }
     }
