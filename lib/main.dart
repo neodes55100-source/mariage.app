@@ -3,18 +3,20 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'app_config.dart';
 import 'sync_service.dart';
 import 'upload_service.dart';
 
-const _red = Color(0xFFB3131B);
-const _deepRed = Color(0xFF841018);
-const _gold = Color(0xFF9A8537);
+const _red = Color(0xFFB20E22);
+const _deepRed = Color(0xFF89111D);
+const _gold = Color(0xFFC7A35A);
 const _cream = Color(0xFFFFFCF8);
-const _soft = Color(0xFFF8F0E8);
-const _ink = Color(0xFF241C18);
+const _paper = Color(0xFFFFF9F3);
+const _soft = Color(0xFFF7EEE6);
+const _ink = Color(0xFF2A211D);
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -55,18 +57,19 @@ class WeddingApp extends StatelessWidget {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
           hintStyle: const TextStyle(color: Colors.black38),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFD9C5B2)),
+            borderRadius: BorderRadius.circular(13),
+            borderSide: const BorderSide(color: Color(0xFFDCCABC)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFD9C5B2)),
+            borderRadius: BorderRadius.circular(13),
+            borderSide: const BorderSide(color: Color(0xFFDCCABC)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _red, width: 1.5),
+            borderRadius: BorderRadius.circular(13),
+            borderSide: const BorderSide(color: _red, width: 1.6),
           ),
         ),
       ),
@@ -84,7 +87,7 @@ class WeddingShell extends StatefulWidget {
 
 class _WeddingShellState extends State<WeddingShell>
     with WidgetsBindingObserver {
-  static const _onboardingKey = 'onboarding_done';
+  static const _onboardingKey = 'onboarding_done_maquette_v2';
   static const _recentNamesKey = 'recent_upload_names';
 
   final _nameController = TextEditingController();
@@ -137,11 +140,10 @@ class _WeddingShellState extends State<WeddingShell>
     _onboardingDone = prefs.getBool(_onboardingKey) ?? false;
     _recentNames = prefs.getStringList(_recentNamesKey) ?? <String>[];
 
-    if (mounted) {
-      setState(() => _busy = false);
-      await Future<void>.delayed(const Duration(milliseconds: 1300));
-      if (mounted) setState(() => _showSplash = false);
-    }
+    if (!mounted) return;
+    setState(() => _busy = false);
+    await Future<void>.delayed(const Duration(milliseconds: 1450));
+    if (mounted) setState(() => _showSplash = false);
   }
 
   Future<void> _finishOnboarding() async {
@@ -153,17 +155,6 @@ class _WeddingShellState extends State<WeddingShell>
       _tab = 1;
       _onboardingStep = 0;
     });
-  }
-
-  Future<void> _saveNameAndEnable() async {
-    final name = _nameController.text.trim();
-    if (name.length < 2) {
-      setState(() => _message = 'Entre ton prénom pour continuer.');
-      return;
-    }
-    await SyncService.setGuestName(name);
-    await _finishOnboarding();
-    await _enableAuto(skipNameCheck: true);
   }
 
   Future<String?> _guestName() async {
@@ -180,7 +171,11 @@ class _WeddingShellState extends State<WeddingShell>
         backgroundColor: _cream,
         title: const Text(
           'Un dernier détail',
-          style: TextStyle(fontFamily: 'serif', fontWeight: FontWeight.w700),
+          style: TextStyle(
+            fontFamily: 'serif',
+            fontWeight: FontWeight.w700,
+            color: _ink,
+          ),
         ),
         content: TextField(
           controller: controller,
@@ -191,7 +186,7 @@ class _WeddingShellState extends State<WeddingShell>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Annuler'),
+            child: const Text('Annuler', style: TextStyle(color: _ink)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: _red),
@@ -229,13 +224,14 @@ class _WeddingShellState extends State<WeddingShell>
               style: const TextStyle(
                 fontFamily: 'serif',
                 fontWeight: FontWeight.w700,
+                color: _ink,
               ),
             ),
-            content: Text(body),
+            content: Text(body, style: const TextStyle(height: 1.35)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Annuler'),
+                child: const Text('Annuler', style: TextStyle(color: _ink)),
               ),
               FilledButton(
                 style: FilledButton.styleFrom(
@@ -266,6 +262,17 @@ class _WeddingShellState extends State<WeddingShell>
     await Workmanager().cancelByUniqueName(AppConfig.backgroundUniqueName);
   }
 
+  Future<void> _saveNameAndEnable() async {
+    final name = _nameController.text.trim();
+    if (name.length < 2) {
+      setState(() => _message = 'Entre ton prénom pour continuer.');
+      return;
+    }
+    await SyncService.setGuestName(name);
+    await _finishOnboarding();
+    await _enableAuto(skipNameCheck: true);
+  }
+
   Future<void> _enableAuto({
     bool resetPersonalEnd = false,
     bool skipNameCheck = false,
@@ -284,23 +291,19 @@ class _WeddingShellState extends State<WeddingShell>
       resetPersonalEnd = true;
     }
 
-    if (mounted) {
-      setState(() {
-        _busy = true;
-        _message = '';
-        _allUpToDate = false;
-      });
-    }
+    setState(() {
+      _busy = true;
+      _message = '';
+      _allUpToDate = false;
+    });
 
     try {
       final permission = await SyncService.requestPhotoPermission();
       if (!permission.hasAccess) {
-        if (mounted) {
-          setState(() {
-            _message =
-                'L’accès aux photos et vidéos est nécessaire pour le partage automatique.';
-          });
-        }
+        setState(() {
+          _message =
+              'L’accès aux photos et vidéos est nécessaire pour le partage automatique.';
+        });
         return;
       }
 
@@ -431,15 +434,7 @@ class _WeddingShellState extends State<WeddingShell>
     try {
       for (final item in picked.files) {
         final path = item.path;
-        if (path == null) {
-          failed++;
-          _uploadDone++;
-          if (mounted) setState(() {});
-          continue;
-        }
-
-        final file = File(path);
-        if (!await file.exists()) {
+        if (path == null || !await File(path).exists()) {
           failed++;
           _uploadDone++;
           if (mounted) setState(() {});
@@ -448,7 +443,7 @@ class _WeddingShellState extends State<WeddingShell>
 
         try {
           final result = await uploader.uploadFile(
-            file: file,
+            file: File(path),
             guestName: name,
             originalName: item.name,
             mimeType: _mimeFor(item.name),
@@ -489,21 +484,138 @@ class _WeddingShellState extends State<WeddingShell>
     });
   }
 
+  Future<void> _openWebsite() async {
+    final uri = Uri.parse('https://www.creemachanson.com');
+    final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d’ouvrir le site pour le moment.')),
+      );
+    }
+  }
+
   String _clock(DateTime d) =>
       '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 
   String _dateTimeLabel(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year} à ${_clock(d)}';
 
-  Widget _heartDivider() {
-    return Row(
-      children: [
-        Expanded(child: Divider(color: _red.withValues(alpha: .25))),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 9),
-          child: Icon(Icons.favorite, color: _red, size: 14),
+  Widget _flowerCorner({required bool right, required bool bottom}) {
+    return Positioned(
+      top: bottom ? null : -18,
+      bottom: bottom ? -18 : null,
+      left: right ? null : -18,
+      right: right ? -18 : null,
+      child: Transform.rotate(
+        angle: right ? .35 : -.35,
+        child: Opacity(
+          opacity: .16,
+          child: Icon(
+            Icons.local_florist,
+            size: 112,
+            color: right ? _deepRed : _red,
+          ),
         ),
-        Expanded(child: Divider(color: _red.withValues(alpha: .25))),
+      ),
+    );
+  }
+
+  Widget _decoratedPage(Widget child) {
+    return Stack(
+      children: [
+        const Positioned.fill(child: ColoredBox(color: _cream)),
+        _flowerCorner(right: false, bottom: false),
+        _flowerCorner(right: true, bottom: false),
+        _flowerCorner(right: false, bottom: true),
+        _flowerCorner(right: true, bottom: true),
+        Positioned.fill(child: child),
+      ],
+    );
+  }
+
+  Widget _ringsMark({double size = 82}) {
+    return SizedBox(
+      width: size * 1.35,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            left: size * .12,
+            child: Container(
+              width: size * .66,
+              height: size * .66,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: _gold, width: 7),
+                boxShadow: const [
+                  BoxShadow(color: Color(0x22C7A35A), blurRadius: 10),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            right: size * .12,
+            top: size * .20,
+            child: Container(
+              width: size * .66,
+              height: size * .66,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: _gold, width: 7),
+                boxShadow: const [
+                  BoxShadow(color: Color(0x22C7A35A), blurRadius: 10),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heartDivider({double width = 250}) {
+    return SizedBox(
+      width: width,
+      child: Row(
+        children: [
+          Expanded(child: Divider(color: _red.withValues(alpha: .25))),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10),
+            child: Icon(Icons.favorite, color: _red, size: 14),
+          ),
+          Expanded(child: Divider(color: _red.withValues(alpha: .25))),
+        ],
+      ),
+    );
+  }
+
+  Widget _coupleHeader({bool compact = false}) {
+    return Column(
+      children: [
+        Text(
+          'Emmanuel & Jennifer',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'cursive',
+            fontStyle: FontStyle.italic,
+            fontSize: compact ? 31 : 38,
+            color: _deepRed,
+            height: 1.08,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _heartDivider(width: compact ? 240 : 270),
+        const SizedBox(height: 7),
+        const Text(
+          'NOTRE MARIAGE',
+          style: TextStyle(
+            letterSpacing: 2.1,
+            fontSize: 12.5,
+            fontWeight: FontWeight.w700,
+            color: _ink,
+          ),
+        ),
       ],
     );
   }
@@ -516,83 +628,93 @@ class _WeddingShellState extends State<WeddingShell>
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontFamily: 'serif',
-            fontSize: 27,
+            fontSize: 29,
             fontWeight: FontWeight.w700,
             color: _ink,
+            height: 1.08,
           ),
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: 9),
         _heartDivider(),
       ],
     );
   }
 
-  ButtonStyle _redButtonStyle() {
+  ButtonStyle _primaryButtonStyle() {
     return FilledButton.styleFrom(
       backgroundColor: _red,
       foregroundColor: Colors.white,
+      minimumSize: const Size.fromHeight(56),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+    );
+  }
+
+  ButtonStyle _outlineButtonStyle() {
+    return OutlinedButton.styleFrom(
+      foregroundColor: _deepRed,
       minimumSize: const Size.fromHeight(54),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+      side: const BorderSide(color: _red, width: 1.35),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(29)),
+      textStyle: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800),
     );
   }
 
   Widget _splash() {
-    return Container(
-      color: const Color(0xFFFFFAF5),
-      padding: const EdgeInsets.fromLTRB(28, 54, 28, 44),
-      child: SafeArea(
-        child: Column(
-          children: [
-            const Spacer(),
-            const Icon(Icons.favorite, color: _red, size: 58),
-            const SizedBox(height: 14),
-            const Icon(Icons.link, color: Color(0xFFC89A43), size: 82),
-            const SizedBox(height: 24),
-            const Text(
-              'Emmanuel\n& Jennifer',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'serif',
-                fontStyle: FontStyle.italic,
-                fontSize: 39,
-                height: 1.08,
-                color: _deepRed,
+    return _decoratedPage(
+      SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(26, 38, 26, 36),
+          child: Column(
+            children: [
+              const Spacer(flex: 2),
+              _ringsMark(size: 92),
+              const SizedBox(height: 22),
+              const Text(
+                'Emmanuel & Jennifer',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'cursive',
+                  fontStyle: FontStyle.italic,
+                  fontSize: 42,
+                  height: 1.05,
+                  color: _deepRed,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            _heartDivider(),
-            const SizedBox(height: 12),
-            const Text(
-              'NOTRE MARIAGE',
-              style: TextStyle(
-                letterSpacing: 2.0,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+              const SizedBox(height: 18),
+              _heartDivider(width: 285),
+              const SizedBox(height: 12),
+              const Text(
+                'NOTRE MARIAGE',
+                style: TextStyle(
+                  letterSpacing: 2.3,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-            const SizedBox(height: 7),
-            const Text(
-              '03 Juillet 2027',
-              style: TextStyle(fontSize: 16, color: Colors.black54),
-            ),
-            const SizedBox(height: 22),
-            const Text(
-              'Partagez vos plus beaux\nsouvenirs avec nous',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, height: 1.35),
-            ),
-            const Spacer(),
-            const Text(
-              'Merci d’être là !',
-              style: TextStyle(
-                fontFamily: 'serif',
-                fontStyle: FontStyle.italic,
-                color: _deepRed,
-                fontSize: 25,
+              const SizedBox(height: 8),
+              const Text(
+                '03 juillet 2027',
+                style: TextStyle(fontSize: 16.5, color: Colors.black54),
               ),
-            ),
-          ],
+              const SizedBox(height: 27),
+              const Text(
+                'Partagez vos plus beaux souvenirs avec nous',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16.5, height: 1.4),
+              ),
+              const Spacer(flex: 3),
+              const Text(
+                'Merci d’être là !',
+                style: TextStyle(
+                  fontFamily: 'cursive',
+                  fontStyle: FontStyle.italic,
+                  color: _deepRed,
+                  fontSize: 28,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -607,78 +729,72 @@ class _WeddingShellState extends State<WeddingShell>
   }
 
   Widget _welcomeStep() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(28, 48, 28, 34),
-      children: [
-        const Text(
-          'Emmanuel & Jennifer',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'serif',
-            fontStyle: FontStyle.italic,
-            fontSize: 30,
-            color: _deepRed,
-          ),
-        ),
-        const SizedBox(height: 7),
-        _heartDivider(),
-        const SizedBox(height: 52),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return _decoratedPage(
+      SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(28, 32, 28, 32),
           children: [
-            _outlineFeatureIcon(Icons.photo_camera_outlined),
-            const SizedBox(width: 28),
-            _outlineFeatureIcon(Icons.play_arrow_rounded),
+            _coupleHeader(compact: true),
+            const SizedBox(height: 46),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _featureIcon(Icons.photo_camera_outlined),
+                const SizedBox(width: 26),
+                _featureIcon(Icons.videocam_outlined),
+              ],
+            ),
+            const SizedBox(height: 34),
+            const Text(
+              'Partagez vos photos\net vidéos',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'serif',
+                fontSize: 29,
+                fontWeight: FontWeight.w700,
+                height: 1.05,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Capturez chaque instant et revivez ensemble\nla magie de cette journée !',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16.5, height: 1.45),
+            ),
+            const SizedBox(height: 46),
+            FilledButton(
+              onPressed: () => setState(() => _onboardingStep = 1),
+              style: _primaryButtonStyle(),
+              child: const Text('Commencer'),
+            ),
+            const SizedBox(height: 10),
+            TextButton(
+              onPressed: _showInfoDialog,
+              child: const Text(
+                'En savoir plus',
+                style: TextStyle(
+                  color: _ink,
+                  decoration: TextDecoration.underline,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 36),
-        const Text(
-          'Partagez vos photos\net vidéos',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'serif',
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            height: 1.05,
-          ),
-        ),
-        const SizedBox(height: 20),
-        const Text(
-          'Capturez chaque instant et\nrevivez ensemble la magie\nde cette journée !',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 17, height: 1.35),
-        ),
-        const SizedBox(height: 52),
-        FilledButton(
-          onPressed: () => setState(() => _onboardingStep = 1),
-          style: _redButtonStyle(),
-          child: const Text('Commencer'),
-        ),
-        const SizedBox(height: 15),
-        TextButton(
-          onPressed: _showInfoDialog,
-          child: const Text(
-            'En savoir plus',
-            style: TextStyle(
-              color: _ink,
-              decoration: TextDecoration.underline,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _outlineFeatureIcon(IconData icon) {
+  Widget _featureIcon(IconData icon) {
     return Container(
-      width: 80,
-      height: 70,
+      width: 82,
+      height: 82,
       decoration: BoxDecoration(
-        border: Border.all(color: _deepRed, width: 3),
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white.withValues(alpha: .72),
+        border: Border.all(color: _deepRed, width: 2.5),
+        borderRadius: BorderRadius.circular(18),
       ),
-      child: Icon(icon, color: _deepRed, size: 44),
+      child: Icon(icon, color: _deepRed, size: 42),
     );
   }
 
@@ -693,7 +809,7 @@ class _WeddingShellState extends State<WeddingShell>
         ),
         content: const Text(
           'Tu peux envoyer manuellement les photos et vidéos de ton choix. Si tu actives le partage automatique, seules celles prises pendant la période du mariage sont envoyées. Tu peux arrêter le partage à tout moment avec le bouton « Fin de soirée ».',
-          style: TextStyle(height: 1.4),
+          style: TextStyle(height: 1.45),
         ),
         actions: [
           FilledButton(
@@ -707,76 +823,116 @@ class _WeddingShellState extends State<WeddingShell>
   }
 
   Widget _permissionStep() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(28, 43, 28, 34),
-      children: [
-        _title('Partage automatique'),
-        const SizedBox(height: 32),
-        const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return _decoratedPage(
+      SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(28, 34, 28, 30),
           children: [
-            Icon(Icons.photo_outlined, size: 64, color: Color(0xFF4A4038)),
-            SizedBox(width: 3),
-            Icon(Icons.cloud_upload, size: 68, color: _red),
+            _title('Partage automatique'),
+            const SizedBox(height: 32),
+            Center(child: _shareIllustration()),
+            const SizedBox(height: 27),
+            const Text(
+              'Autorisez l’accès à vos photos\net vidéos',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'serif',
+                fontWeight: FontWeight.w700,
+                fontSize: 22,
+                height: 1.15,
+              ),
+            ),
+            const SizedBox(height: 26),
+            _checkLine(
+              'Toutes les photos et vidéos prises pendant le mariage seront automatiquement envoyées',
+            ),
+            _checkLine(
+              'Seuls les médias pris pendant l’événement seront partagés',
+            ),
+            _checkLine('Vos photos restent privées ailleurs'),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: _busy
+                  ? null
+                  : () async {
+                      setState(() => _busy = true);
+                      try {
+                        final permission =
+                            await SyncService.requestPhotoPermission();
+                        if (!mounted) return;
+                        if (permission.hasAccess) {
+                          setState(() {
+                            _onboardingStep = 2;
+                            _message = '';
+                          });
+                        } else {
+                          setState(() {
+                            _message =
+                                'Autorisation refusée. Tu pourras l’activer plus tard depuis l’onglet Statut.';
+                          });
+                        }
+                      } finally {
+                        if (mounted) setState(() => _busy = false);
+                      }
+                    },
+              style: _primaryButtonStyle(),
+              child: const Text('J’autorise'),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () async {
+                await _finishOnboarding();
+                if (mounted) setState(() => _tab = 0);
+              },
+              child: const Text('Plus tard', style: TextStyle(color: _ink)),
+            ),
+            _messageBox(),
           ],
         ),
-        const SizedBox(height: 30),
-        const Text(
-          'Autorisez l’accès à vos photos\net vidéos',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'serif',
-            fontWeight: FontWeight.w700,
-            fontSize: 22,
-            height: 1.15,
+      ),
+    );
+  }
+
+  Widget _shareIllustration() {
+    return SizedBox(
+      width: 190,
+      height: 105,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            left: 4,
+            child: Container(
+              width: 68,
+              height: 92,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFF665950), width: 2),
+              ),
+              child: const Icon(Icons.photo_library_outlined,
+                  color: _deepRed, size: 36),
+            ),
           ),
-        ),
-        const SizedBox(height: 24),
-        _checkLine(
-          'Toutes les photos et vidéos prises pendant le mariage seront automatiquement envoyées',
-        ),
-        _checkLine(
-          'Seuls les médias pris pendant l’événement seront partagés',
-        ),
-        _checkLine('Vos photos restent privées ailleurs'),
-        const SizedBox(height: 24),
-        FilledButton(
-          onPressed: _busy
-              ? null
-              : () async {
-                  setState(() => _busy = true);
-                  try {
-                    final permission =
-                        await SyncService.requestPhotoPermission();
-                    if (!mounted) return;
-                    if (permission.hasAccess) {
-                      setState(() {
-                        _onboardingStep = 2;
-                        _message = '';
-                      });
-                    } else {
-                      setState(() {
-                        _message =
-                            'Autorisation refusée. Tu peux continuer plus tard depuis l’onglet Statut.';
-                      });
-                    }
-                  } finally {
-                    if (mounted) setState(() => _busy = false);
-                  }
-                },
-          style: _redButtonStyle(),
-          child: const Text('J’autorise'),
-        ),
-        const SizedBox(height: 10),
-        TextButton(
-          onPressed: () async {
-            await _finishOnboarding();
-            if (mounted) setState(() => _tab = 0);
-          },
-          child: const Text('Plus tard', style: TextStyle(color: _ink)),
-        ),
-        if (_message.isNotEmpty) _messageBox(),
-      ],
+          const Positioned(
+            left: 77,
+            child: Icon(Icons.arrow_forward_rounded, color: _gold, size: 34),
+          ),
+          Positioned(
+            right: 2,
+            child: Container(
+              width: 80,
+              height: 72,
+              decoration: BoxDecoration(
+                color: _soft,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(Icons.cloud_upload_outlined,
+                  color: _red, size: 47),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -792,10 +948,8 @@ class _WeddingShellState extends State<WeddingShell>
           ),
           const SizedBox(width: 11),
           Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 15.5, height: 1.25),
-            ),
+            child: Text(text,
+                style: const TextStyle(fontSize: 15.3, height: 1.3)),
           ),
         ],
       ),
@@ -803,122 +957,104 @@ class _WeddingShellState extends State<WeddingShell>
   }
 
   Widget _nameStep() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(28, 72, 28, 34),
-      children: [
-        _title('Un dernier détail'),
-        const SizedBox(height: 32),
-        const Icon(Icons.person_outline, size: 68, color: _deepRed),
-        const SizedBox(height: 26),
-        const Text(
-          'Entrez votre prénom\npour identifier vos médias',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            height: 1.35,
-          ),
+    return _decoratedPage(
+      SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(28, 50, 28, 30),
+          children: [
+            _title('Un dernier détail'),
+            const SizedBox(height: 34),
+            const Icon(Icons.person_outline, size: 70, color: _deepRed),
+            const SizedBox(height: 24),
+            const Text(
+              'Entrez votre prénom pour identifier vos médias',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16.5, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 28),
+            TextField(
+              controller: _nameController,
+              enabled: !_busy,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(hintText: 'Votre prénom'),
+              onChanged: (_) {
+                if (_message.isNotEmpty) setState(() => _message = '');
+              },
+            ),
+            const SizedBox(height: 26),
+            FilledButton(
+              onPressed: _busy ? null : _saveNameAndEnable,
+              style: _primaryButtonStyle(),
+              child: const Text('Continuer'),
+            ),
+            const SizedBox(height: 13),
+            const Text(
+              'Vous pourrez le modifier plus tard',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black54, fontSize: 13),
+            ),
+            _messageBox(),
+          ],
         ),
-        const SizedBox(height: 28),
-        TextField(
-          controller: _nameController,
-          enabled: !_busy,
-          textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(hintText: 'Votre prénom'),
-          onChanged: (_) {
-            if (_message.isNotEmpty) setState(() => _message = '');
-          },
-        ),
-        const SizedBox(height: 28),
-        FilledButton(
-          onPressed: _busy ? null : _saveNameAndEnable,
-          style: _redButtonStyle(),
-          child: const Text('Continuer'),
-        ),
-        const SizedBox(height: 14),
-        const Text(
-          'Vous pourrez le modifier plus tard',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.black54, fontSize: 13),
-        ),
-        if (_message.isNotEmpty) _messageBox(),
-      ],
+      ),
     );
   }
 
   Widget _home() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(28, 36, 28, 30),
-      children: [
-        const Text(
-          'Emmanuel & Jennifer',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'serif',
-            fontStyle: FontStyle.italic,
-            fontSize: 29,
-            color: _deepRed,
-          ),
-        ),
-        const SizedBox(height: 8),
-        _heartDivider(),
-        const SizedBox(height: 38),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return _decoratedPage(
+      SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(28, 28, 28, 30),
           children: [
-            _outlineFeatureIcon(Icons.photo_camera_outlined),
-            const SizedBox(width: 28),
-            _outlineFeatureIcon(Icons.play_arrow_rounded),
+            _coupleHeader(compact: true),
+            const SizedBox(height: 38),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _featureIcon(Icons.photo_camera_outlined),
+                const SizedBox(width: 25),
+                _featureIcon(Icons.videocam_outlined),
+              ],
+            ),
+            const SizedBox(height: 30),
+            const Text(
+              'Partagez vos photos\net vidéos',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'serif',
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                height: 1.05,
+              ),
+            ),
+            const SizedBox(height: 17),
+            const Text(
+              'Capturez chaque instant et revivez ensemble\nla magie de cette journée !',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, height: 1.4),
+            ),
+            const SizedBox(height: 34),
+            FilledButton(
+              onPressed: _busy ? null : _manualUpload,
+              style: _primaryButtonStyle(),
+              child: const Text('Déposer mes photos / vidéos'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () => setState(() => _tab = 1),
+              style: _outlineButtonStyle(),
+              child: Text(
+                _enabled
+                    ? 'Voir le partage automatique'
+                    : _eveningEnded
+                        ? 'Partage terminé'
+                        : 'Activer le partage automatique',
+              ),
+            ),
+            _messageBox(),
           ],
         ),
-        const SizedBox(height: 32),
-        const Text(
-          'Partagez vos photos\net vidéos',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'serif',
-            fontSize: 27,
-            fontWeight: FontWeight.w700,
-            height: 1.05,
-          ),
-        ),
-        const SizedBox(height: 18),
-        const Text(
-          'Capturez chaque instant et\nrevivez ensemble la magie\nde cette journée !',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16.5, height: 1.35),
-        ),
-        const SizedBox(height: 35),
-        FilledButton(
-          onPressed: _busy ? null : _manualUpload,
-          style: _redButtonStyle(),
-          child: const Text('Envoyer des photos / vidéos'),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton(
-          onPressed: () => setState(() {
-            _tab = 1;
-            _allUpToDate = false;
-          }),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: _deepRed,
-            minimumSize: const Size.fromHeight(52),
-            side: const BorderSide(color: _red),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(26),
-            ),
-          ),
-          child: Text(
-            _enabled
-                ? 'Voir le partage automatique'
-                : _eveningEnded
-                    ? 'Partage terminé'
-                    : 'Activer le partage automatique',
-            style: const TextStyle(fontWeight: FontWeight.w700),
-          ),
-        ),
-        _messageBox(),
-      ],
+      ),
     );
   }
 
@@ -931,139 +1067,140 @@ class _WeddingShellState extends State<WeddingShell>
   }
 
   Widget _inactiveStatus() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(28, 42, 28, 30),
-      children: [
-        _title('Partage automatique'),
-        const SizedBox(height: 30),
-        const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return _decoratedPage(
+      SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(28, 32, 28, 30),
           children: [
-            Icon(Icons.photo_outlined, size: 60, color: Color(0xFF4A4038)),
-            Icon(Icons.cloud_upload, size: 65, color: _red),
+            _title('Partage automatique'),
+            const SizedBox(height: 29),
+            Center(child: _shareIllustration()),
+            const SizedBox(height: 24),
+            const Text(
+              'Autorisez l’accès à vos photos\net vidéos',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'serif',
+                fontWeight: FontWeight.w700,
+                fontSize: 21.5,
+              ),
+            ),
+            const SizedBox(height: 22),
+            _checkLine(
+              'Toutes les photos et vidéos prises pendant le mariage seront automatiquement envoyées',
+            ),
+            _checkLine(
+              'Seuls les médias pris pendant l’événement seront partagés',
+            ),
+            _checkLine('Vos photos restent privées ailleurs'),
+            const SizedBox(height: 14),
+            FilledButton(
+              onPressed: _busy ? null : _enableAuto,
+              style: _primaryButtonStyle(),
+              child: const Text('J’autorise'),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => setState(() => _tab = 0),
+              child: const Text('Plus tard', style: TextStyle(color: _ink)),
+            ),
+            _messageBox(),
           ],
         ),
-        const SizedBox(height: 25),
-        const Text(
-          'Autorisez l’accès à vos photos\net vidéos',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'serif',
-            fontWeight: FontWeight.w700,
-            fontSize: 21,
-          ),
-        ),
-        const SizedBox(height: 22),
-        _checkLine(
-          'Toutes les photos et vidéos prises pendant le mariage seront automatiquement envoyées',
-        ),
-        _checkLine(
-          'Seuls les médias pris pendant l’événement seront partagés',
-        ),
-        _checkLine('Vos photos restent privées ailleurs'),
-        const SizedBox(height: 16),
-        FilledButton(
-          onPressed: _busy ? null : _enableAuto,
-          style: _redButtonStyle(),
-          child: const Text('J’autorise'),
-        ),
-        const SizedBox(height: 8),
-        TextButton(
-          onPressed: () => setState(() => _tab = 0),
-          child: const Text('Plus tard', style: TextStyle(color: _ink)),
-        ),
-        _messageBox(),
-      ],
+      ),
     );
   }
 
   Widget _activeStatus() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(28, 50, 28, 28),
-      children: [
-        Center(
-          child: Container(
-            width: 92,
-            height: 92,
-            decoration: const BoxDecoration(
-              color: _red,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.check, color: Colors.white, size: 55),
-          ),
-        ),
-        const SizedBox(height: 28),
-        const Text(
-          'Partage automatique\nactivé !',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'serif',
-            fontSize: 27,
-            fontWeight: FontWeight.w700,
-            height: 1.05,
-          ),
-        ),
-        const SizedBox(height: 18),
-        const Text(
-          'Toutes les photos et vidéos que vous\nprenez pendant le mariage seront\nautomatiquement envoyées.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 15.5, height: 1.4),
-        ),
-        const SizedBox(height: 25),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: _soft,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.calendar_today_outlined, color: _ink, size: 24),
-              SizedBox(width: 13),
-              Expanded(
-                child: Text(
-                  'Période de partage\n03 juil. 2027 — 14:00\nau 04 juil. 2027 — 05:00',
-                  style: TextStyle(height: 1.4, fontWeight: FontWeight.w600),
-                ),
+    return _decoratedPage(
+      SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(28, 38, 28, 28),
+          children: [
+            Center(
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: const BoxDecoration(
+                      color: _red,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.check, color: Colors.white, size: 51),
+                  ),
+                  const Positioned(
+                    top: 0,
+                    right: -2,
+                    child: Icon(Icons.auto_awesome, color: _gold, size: 24),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        OutlinedButton(
-          onPressed: _busy ? null : _finishEvening,
-          style: OutlinedButton.styleFrom(
-            foregroundColor: _deepRed,
-            minimumSize: const Size.fromHeight(52),
-            side: const BorderSide(color: _red),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(26),
             ),
-          ),
-          child: const Text(
-            'Fin de soirée — arrêter le partage',
-            style: TextStyle(fontWeight: FontWeight.w800),
-          ),
+            const SizedBox(height: 25),
+            const Text(
+              'Partage automatique activé !',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'serif',
+                fontSize: 27,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Toutes les photos et vidéos que vous prenez pendant le mariage seront automatiquement envoyées.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 15.5, height: 1.45),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(17),
+              decoration: BoxDecoration(
+                color: _soft,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFEADBD0)),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.calendar_month_outlined, color: _deepRed, size: 25),
+                  SizedBox(width: 13),
+                  Expanded(
+                    child: Text(
+                      'Période de partage\n03 juil. 2027 — 14:00\nau 04 juil. 2027 — 05:00',
+                      style: TextStyle(height: 1.45, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton(
+              onPressed: _busy ? null : _finishEvening,
+              style: _outlineButtonStyle(),
+              child: const Text('Fin de soirée — arrêter le partage'),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: _busy ? null : () => _syncNow(),
+              child: const Text(
+                'Synchroniser maintenant',
+                style: TextStyle(color: _deepRed, fontWeight: FontWeight.w700),
+              ),
+            ),
+            TextButton(
+              onPressed: _busy ? null : _pauseAuto,
+              child: const Text(
+                'Mettre en pause',
+                style: TextStyle(color: Colors.black54),
+              ),
+            ),
+            _messageBox(),
+          ],
         ),
-        const SizedBox(height: 9),
-        TextButton(
-          onPressed: _busy ? null : () => _syncNow(),
-          child: const Text(
-            'Synchroniser maintenant',
-            style: TextStyle(color: _deepRed, fontWeight: FontWeight.w700),
-          ),
-        ),
-        const SizedBox(height: 2),
-        TextButton(
-          onPressed: _busy ? null : _pauseAuto,
-          child: const Text(
-            'Mettre en pause',
-            style: TextStyle(color: Colors.black54),
-          ),
-        ),
-        _messageBox(),
-      ],
+      ),
     );
   }
 
@@ -1074,352 +1211,373 @@ class _WeddingShellState extends State<WeddingShell>
         ? (_uploadDone / total).clamp(0.0, 1.0)
         : null;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(28, 65, 28, 30),
-      children: [
-        const Text(
-          'Envoi en cours...',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'serif',
-            fontSize: 27,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 26),
-        const Icon(Icons.cloud_upload, color: _red, size: 78),
-        const SizedBox(height: 10),
-        Text(
-          '$done',
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w800),
-        ),
-        const Text(
-          'médias envoyés',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 24),
-        LinearProgressIndicator(
-          value: progress,
-          minHeight: 9,
-          borderRadius: BorderRadius.circular(6),
-          color: _red,
-          backgroundColor: const Color(0xFFE8D4C4),
-        ),
-        const SizedBox(height: 28),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: List.generate(
-            4,
-            (index) => Container(
-              width: 62,
-              height: 62,
-              decoration: BoxDecoration(
-                color: _soft,
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: const Color(0xFFE5D4C3)),
+    return _decoratedPage(
+      SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(28, 44, 28, 30),
+          children: [
+            const Text(
+              'Envoi en cours...',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'serif',
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
               ),
-              child: const Icon(Icons.image_outlined, color: _deepRed),
             ),
-          ),
+            const SizedBox(height: 24),
+            const Icon(Icons.cloud_upload_outlined, color: _red, size: 78),
+            const SizedBox(height: 8),
+            Text(
+              '$done médias envoyés',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 24),
+            LinearProgressIndicator(
+              value: progress,
+              minHeight: 9,
+              borderRadius: BorderRadius.circular(6),
+              color: _red,
+              backgroundColor: const Color(0xFFE9D7C8),
+            ),
+            const SizedBox(height: 26),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: List.generate(
+                4,
+                (index) => Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: _soft,
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(color: const Color(0xFFE5D4C3)),
+                  ),
+                  child: const Icon(Icons.image_outlined, color: _deepRed),
+                ),
+              ),
+            ),
+            const SizedBox(height: 25),
+            const Text(
+              'Les médias sont envoyés en arrière-plan.\nVous pouvez continuer à utiliser votre téléphone.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13.5, color: Colors.black54, height: 1.45),
+            ),
+          ],
         ),
-        const SizedBox(height: 24),
-        const Text(
-          'Les médias sont envoyés en arrière-plan.\nVous pouvez continuer à utiliser votre téléphone.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 13.5,
-            color: Colors.black54,
-            height: 1.4,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
   Widget _upToDateStatus() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(28, 72, 28, 30),
-      children: [
-        Center(
-          child: Container(
-            width: 86,
-            height: 86,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: _gold, width: 3),
-            ),
-            child: const Icon(
-              Icons.check,
-              color: Color(0xFF71802F),
-              size: 52,
-            ),
-          ),
-        ),
-        const SizedBox(height: 28),
-        const Text(
-          'Tout est à jour !',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'serif',
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          '$_sentCount',
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w800),
-        ),
-        const Text(
-          'médias envoyés',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 30),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-          decoration: BoxDecoration(
-            color: _soft,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Column(
-            children: [
-              Text(
-                'Merci de partager ces beaux\nsouvenirs avec nous !',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 15.5, height: 1.35),
+    return _decoratedPage(
+      SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(28, 56, 28, 30),
+          children: [
+            Center(
+              child: Container(
+                width: 87,
+                height: 87,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFF2F0DF),
+                  border: Border.all(color: _gold, width: 2.5),
+                ),
+                child: const Icon(Icons.check, color: Color(0xFF71802F), size: 52),
               ),
-              SizedBox(height: 14),
-              Icon(Icons.favorite, color: _red, size: 24),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        OutlinedButton(
-          onPressed: () => setState(() => _allUpToDate = false),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: _deepRed,
-            minimumSize: const Size.fromHeight(50),
-            side: const BorderSide(color: _red),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(25),
             ),
-          ),
-          child: const Text('Retour au statut'),
+            const SizedBox(height: 26),
+            const Text(
+              'Tout est à jour !',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'serif',
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 15),
+            Text(
+              '$_sentCount médias envoyés',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 28),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+              decoration: BoxDecoration(
+                color: _soft,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Column(
+                children: [
+                  Text(
+                    'Merci de partager ces beaux souvenirs avec nous !',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 15.5, height: 1.4),
+                  ),
+                  SizedBox(height: 12),
+                  Icon(Icons.favorite, color: _red, size: 24),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            OutlinedButton(
+              onPressed: () => setState(() => _allUpToDate = false),
+              style: _outlineButtonStyle(),
+              child: const Text('Retour au statut'),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => setState(() => _tab = 2),
+              child: const Text(
+                'Voir mes derniers envois',
+                style: TextStyle(color: _deepRed, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 8),
-        TextButton(
-          onPressed: () => setState(() => _tab = 2),
-          child: const Text(
-            'Voir mes derniers envois',
-            style: TextStyle(color: _deepRed, fontWeight: FontWeight.w700),
-          ),
-        ),
-        _messageBox(),
-      ],
+      ),
     );
   }
 
   Widget _endedStatus() {
     final end = _personalAutoEnd!;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(28, 55, 28, 30),
-      children: [
-        _title('Partage terminé'),
-        const SizedBox(height: 34),
-        const Icon(Icons.nightlight_round, color: _deepRed, size: 72),
-        const SizedBox(height: 20),
-        const Text(
-          'Bonne fin de soirée !',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontFamily: 'serif',
-            fontSize: 27,
-            fontWeight: FontWeight.w700,
-          ),
+    return _decoratedPage(
+      SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(28, 44, 28, 30),
+          children: [
+            _title('Partage terminé'),
+            const SizedBox(height: 31),
+            const Icon(Icons.nightlight_round, color: _deepRed, size: 72),
+            const SizedBox(height: 20),
+            const Text(
+              'Bonne fin de soirée !',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'serif',
+                fontSize: 27,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Le partage automatique a été arrêté le ${_dateTimeLabel(end)}.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 15.5, height: 1.45),
+            ),
+            const SizedBox(height: 15),
+            const Text(
+              'Aucun média pris après cette heure ne sera envoyé automatiquement.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black54, height: 1.4),
+            ),
+            const SizedBox(height: 28),
+            FilledButton(
+              onPressed: _manualUpload,
+              style: _primaryButtonStyle(),
+              child: const Text('Envoyer manuellement'),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => _enableAuto(resetPersonalEnd: false),
+              child: const Text(
+                'J’ai cliqué par erreur — réactiver',
+                style: TextStyle(color: _deepRed, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 18),
-        Text(
-          'Le partage automatique a été arrêté le ${_dateTimeLabel(end)}.',
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 15.5, height: 1.4),
-        ),
-        const SizedBox(height: 18),
-        const Text(
-          'Aucun média pris après cette heure ne sera envoyé automatiquement.',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.black54, height: 1.4),
-        ),
-        const SizedBox(height: 30),
-        FilledButton(
-          onPressed: _manualUpload,
-          style: _redButtonStyle(),
-          child: const Text('Envoyer manuellement'),
-        ),
-        const SizedBox(height: 10),
-        TextButton(
-          onPressed: () => _enableAuto(resetPersonalEnd: false),
-          child: const Text(
-            'J’ai cliqué par erreur — réactiver',
-            style: TextStyle(color: _deepRed, fontWeight: FontWeight.w700),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
   Widget _gallery() {
     final names = _recentNames;
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 30, 20, 28),
-      children: [
-        const Text(
-          'Vos derniers envois',
-          style: TextStyle(
-            fontFamily: 'serif',
-            fontSize: 25,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 18),
-        if (names.isEmpty)
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 20),
-            decoration: BoxDecoration(
-              color: _soft,
-              borderRadius: BorderRadius.circular(14),
+    return _decoratedPage(
+      SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 28, 20, 28),
+          children: [
+            const Text(
+              'Vos derniers envois',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'serif',
+                fontSize: 27,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            child: Column(
-              children: [
-                const Icon(
-                  Icons.photo_library_outlined,
-                  color: _deepRed,
-                  size: 58,
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  '$_sentCount média(s) envoyé(s)',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Les prochains envois manuels apparaîtront ici.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.black54),
-                ),
-              ],
-            ),
-          )
-        else
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: names.length > 9 ? 9 : names.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 6,
-              mainAxisSpacing: 6,
-            ),
-            itemBuilder: (context, index) {
-              final name = names[index];
-              final isVideo = <String>['mp4', 'mov', 'm4v']
-                  .contains(name.toLowerCase().split('.').last);
-              final isLast = index == 8 && names.length > 9;
-              return Container(
+            const SizedBox(height: 8),
+            _heartDivider(),
+            const SizedBox(height: 20),
+            if (names.isEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 44, horizontal: 20),
                 decoration: BoxDecoration(
                   color: _soft,
-                  borderRadius: BorderRadius.circular(9),
-                  border: Border.all(color: const Color(0xFFE5D4C3)),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Center(
-                  child: isLast
-                      ? Text(
-                          '+${names.length - 8}',
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        )
-                      : Icon(
-                          isVideo
-                              ? Icons.play_circle_outline
-                              : Icons.image_outlined,
-                          color: _deepRed,
-                          size: 34,
-                        ),
+                child: Column(
+                  children: [
+                    const Icon(Icons.photo_library_outlined,
+                        color: _deepRed, size: 58),
+                    const SizedBox(height: 13),
+                    Text(
+                      '$_sentCount média(s) envoyé(s)',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Les prochains envois apparaîtront ici.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.black54),
+                    ),
+                  ],
                 ),
-              );
-            },
-          ),
-        const SizedBox(height: 24),
-        OutlinedButton(
-          onPressed: _manualUpload,
-          style: OutlinedButton.styleFrom(
-            foregroundColor: _deepRed,
-            minimumSize: const Size.fromHeight(50),
-            side: const BorderSide(color: _red),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(25),
+              )
+            else
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: names.length > 9 ? 9 : names.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 6,
+                  mainAxisSpacing: 6,
+                ),
+                itemBuilder: (context, index) {
+                  final name = names[index];
+                  final isVideo = <String>['mp4', 'mov', 'm4v']
+                      .contains(name.toLowerCase().split('.').last);
+                  final isLast = index == 8 && names.length > 9;
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: _soft,
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(color: const Color(0xFFE5D4C3)),
+                    ),
+                    child: Center(
+                      child: isLast
+                          ? Text(
+                              '+${names.length - 8}',
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            )
+                          : Icon(
+                              isVideo
+                                  ? Icons.play_circle_outline
+                                  : Icons.image_outlined,
+                              color: _deepRed,
+                              size: 34,
+                            ),
+                    ),
+                  );
+                },
+              ),
+            const SizedBox(height: 22),
+            OutlinedButton(
+              onPressed: _manualUpload,
+              style: _outlineButtonStyle(),
+              child: const Text('Ajouter des photos / vidéos'),
             ),
-          ),
-          child: const Text(
-            'Ajouter des photos / vidéos',
-            style: TextStyle(fontWeight: FontWeight.w700),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
   Widget _more() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(24, 34, 24, 28),
-      children: [
-        _title('Plus'),
-        const SizedBox(height: 24),
-        _settingCard(
-          Icons.person_outline,
-          'Prénom',
-          _nameController.text.trim().isEmpty
-              ? 'Non renseigné'
-              : _nameController.text.trim(),
-        ),
-        _settingCard(
-          Icons.shield_outlined,
-          'Confidentialité',
-          'Seuls les médias choisis manuellement ou pris pendant la période du mariage sont envoyés.',
-        ),
-        _settingCard(
-          Icons.schedule_outlined,
-          'Période automatique',
-          '03/07/2027 14:00 → 04/07/2027 05:00',
-        ),
-        if (_enabled)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: OutlinedButton(
-              onPressed: _finishEvening,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: _deepRed,
-                minimumSize: const Size.fromHeight(52),
-                side: const BorderSide(color: _red),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(26),
+    return _decoratedPage(
+      SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 30),
+          children: [
+            _title('Plus'),
+            const SizedBox(height: 22),
+            _settingCard(
+              Icons.person_outline,
+              'Prénom',
+              _nameController.text.trim().isEmpty
+                  ? 'Non renseigné'
+                  : _nameController.text.trim(),
+            ),
+            _settingCard(
+              Icons.shield_outlined,
+              'Confidentialité',
+              'Seuls les médias choisis manuellement ou pris pendant la période du mariage sont envoyés.',
+            ),
+            _settingCard(
+              Icons.schedule_outlined,
+              'Période automatique',
+              '03/07/2027 14:00 → 04/07/2027 05:00',
+            ),
+            if (_enabled)
+              Padding(
+                padding: const EdgeInsets.only(top: 6, bottom: 16),
+                child: OutlinedButton(
+                  onPressed: _finishEvening,
+                  style: _outlineButtonStyle(),
+                  child: const Text('Fin de soirée — arrêter le partage'),
                 ),
               ),
-              child: const Text(
-                'Fin de soirée — arrêter le partage',
-                style: TextStyle(fontWeight: FontWeight.w800),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: .86),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE6D8CE)),
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.favorite_border, color: _deepRed, size: 28),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Application réalisée par',
+                    style: TextStyle(color: Colors.black54, fontSize: 13),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Manu D Studio',
+                    style: TextStyle(
+                      fontFamily: 'serif',
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                      color: _ink,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'pour',
+                    style: TextStyle(color: Colors.black54, fontSize: 12),
+                  ),
+                  TextButton(
+                    onPressed: _openWebsite,
+                    child: const Text(
+                      'www.creemachanson.com',
+                      style: TextStyle(
+                        color: _deepRed,
+                        decoration: TextDecoration.underline,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const Text(
+                    '© Manu D Studio 2026/2027',
+                    style: TextStyle(color: Colors.black45, fontSize: 11.5),
+                  ),
+                ],
               ),
             ),
-          ),
-      ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -1428,7 +1586,7 @@ class _WeddingShellState extends State<WeddingShell>
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(17),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withValues(alpha: .9),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE5D4C3)),
       ),
@@ -1441,17 +1599,11 @@ class _WeddingShellState extends State<WeddingShell>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
                 Text(
                   text,
-                  style: const TextStyle(
-                    color: Colors.black54,
-                    height: 1.35,
-                  ),
+                  style: const TextStyle(color: Colors.black54, height: 1.35),
                 ),
               ],
             ),
@@ -1487,11 +1639,11 @@ class _WeddingShellState extends State<WeddingShell>
         if (value != 1) _allUpToDate = false;
       }),
       type: BottomNavigationBarType.fixed,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFFFEFC),
       selectedItemColor: _red,
-      unselectedItemColor: const Color(0xFF3C3835),
-      selectedFontSize: 11,
-      unselectedFontSize: 11,
+      unselectedItemColor: const Color(0xFF4D4845),
+      selectedFontSize: 11.5,
+      unselectedFontSize: 11.5,
       selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
       items: const [
         BottomNavigationBarItem(
@@ -1525,16 +1677,14 @@ class _WeddingShellState extends State<WeddingShell>
     if (!_onboardingDone) {
       return Scaffold(
         backgroundColor: _cream,
-        body: SafeArea(child: _onboarding()),
+        body: _onboarding(),
       );
     }
 
     final pages = [_home(), _status(), _gallery(), _more()];
     return Scaffold(
       backgroundColor: _cream,
-      body: SafeArea(
-        child: IndexedStack(index: _tab, children: pages),
-      ),
+      body: IndexedStack(index: _tab, children: pages),
       bottomNavigationBar: _bottomNav(),
     );
   }
