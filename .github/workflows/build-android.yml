@@ -10,22 +10,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-      - name: Generate native projects
-        run: flutter create --project-name mariage_app --org fr.creemachanson --platforms android,ios .
-      - name: Patch permissions and app metadata
+
+      - name: Generate Android project
+        run: flutter create --project-name mariage_app --org fr.creemachanson --platforms android .
+
+      - name: Patch Android permissions, package and icon
         run: bash tool/patch_native.sh
+
       - name: Install dependencies
         run: flutter pub get
+
       - name: Analyze app code
         run: flutter analyze lib
+
       - name: Build APK
         run: flutter build apk --release
+
       - name: Build App Bundle
         run: flutter build appbundle --release
+
       - name: Upload Android builds
         uses: actions/upload-artifact@v4
         with:
