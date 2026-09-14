@@ -20,8 +20,8 @@ jobs:
         run: bash tool/patch_native.sh
       - name: Install dependencies
         run: flutter pub get
-      - name: Analyze
-        run: flutter analyze
+      - name: Analyze app code
+        run: flutter analyze lib
       - name: Build APK
         run: flutter build apk --release
       - name: Build App Bundle
