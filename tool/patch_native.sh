@@ -129,6 +129,13 @@ if plist.exists():
             '\t\t<string>fetch</string>',
             '\t</array>',
         ])
+    if 'BGTaskSchedulerPermittedIdentifiers' not in text:
+        additions.extend([
+            '\t<key>BGTaskSchedulerPermittedIdentifiers</key>',
+            '\t<array>',
+            '\t\t<string>fr.creemachanson.mariage.wedding-media-sync-periodic</string>',
+            '\t</array>',
+        ])
 
     if additions:
         text = text.replace('</dict>', '\n'.join(additions) + '\n</dict>')
