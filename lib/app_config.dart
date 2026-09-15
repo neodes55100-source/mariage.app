@@ -7,4 +7,6 @@ class AppConfig {
 
   static const String backgroundTaskName = 'wedding-media-sync';
   static const String backgroundUniqueName = 'wedding-media-sync-periodic';
+  static const String iosBackgroundUniqueName =
+      'fr.creemachanson.mariage.wedding-media-sync-periodic';
 }
