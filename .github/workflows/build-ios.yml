@@ -84,7 +84,9 @@ jobs:
         run: flutter build ios --release --config-only --no-codesign
 
       - name: Build iOS app without signing
+        shell: bash
         run: |
+          set -o pipefail
           xcodebuild \
             -workspace ios/Runner.xcworkspace \
             -scheme Runner \
@@ -96,7 +98,7 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             DEVELOPMENT_TEAM="" \
             PROVISIONING_PROFILE_SPECIFIER="" \
-            build
+            build 2>&1 | tee xcodebuild.log
           mkdir -p build/ios/iphoneos
           cp -R build/ios_unsigned/Build/Products/Release-iphoneos/Runner.app build/ios/iphoneos/
 
@@ -112,3 +114,10 @@ jobs:
         with:
           name: Mariage-iOS-unsigned
           path: Mariage-Emmanuel-et-Jennifer-iOS-unsigned.ipa
+
+      - name: Upload iOS diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mariage-iOS-diagnostics
+          path: xcodebuild.log
