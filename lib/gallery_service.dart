@@ -93,8 +93,9 @@ class GalleryService {
   }
 
   static Future<String> _fetchAlbumPage(http.Client client, int page) async {
-    final uri = Uri.parse('${AppConfig.siteBaseUrl}/album.php')
-        .replace(queryParameters: page > 1 ? <String, String>{'page': '$page'} : null);
+    final uri = Uri.parse('${AppConfig.siteBaseUrl}/album.php').replace(
+      queryParameters: page > 1 ? <String, String>{'page': '$page'} : null,
+    );
     final response = await client.get(
       uri,
       headers: const <String, String>{
@@ -118,7 +119,9 @@ class GalleryService {
       caseSensitive: false,
     ).firstMatch(html);
     final parsed = match == null ? 1 : int.tryParse(match.group(1) ?? '') ?? 1;
-    return parsed.clamp(1, 30);
+    if (parsed < 1) return 1;
+    if (parsed > 30) return 30;
+    return parsed;
   }
 
   static List<GalleryMedia> _parseMedia(String html) {
