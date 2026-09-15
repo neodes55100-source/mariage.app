@@ -24,6 +24,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/wedding/rose_top.webp
-    - assets/wedding/rose_bottom.webp
