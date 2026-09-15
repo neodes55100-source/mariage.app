@@ -22,6 +22,7 @@ jobs:
       - name: Patch Android permissions, package and icon
         run: |
           bash tool/patch_native.sh
+          python3 tool/patch_gallery.py
           sed -i '/const _paper =/d' lib/main.dart
 
       - name: Install dependencies
