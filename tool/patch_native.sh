@@ -135,6 +135,33 @@ if plist.exists():
 
     plist.write_text(text)
 
+# Workmanager utilise un moteur Flutter séparé en arrière-plan sur iOS.
+# On y enregistre les plugins nécessaires à SharedPreferences, PhotoManager et HTTP.
+app_delegate = Path('ios/Runner/AppDelegate.swift')
+if app_delegate.exists():
+    app_delegate.write_text('''import Flutter
+import UIKit
+import workmanager_apple
+
+@main
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+  override func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  ) -> Bool {
+    WorkmanagerPlugin.registerLaunchHandlers()
+    WorkmanagerPlugin.setPluginRegistrantCallback { registry in
+      GeneratedPluginRegistrant.register(with: registry)
+    }
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+  }
+}
+''')
+
 pbx = Path('ios/Runner.xcodeproj/project.pbxproj')
 if pbx.exists():
     text = pbx.read_text()
