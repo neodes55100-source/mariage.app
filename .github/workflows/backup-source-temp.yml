@@ -1,0 +1,36 @@
+name: Temporary Source Backup
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/backup-source-temp.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout complete repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create source and history archives
+        run: |
+          git archive --format=zip --output=mariage-app-source-main.zip HEAD
+          git bundle create mariage-app-full-history.bundle --all
+          printf 'Repository: neodes55100-source/mariage.app\nCommit: %s\nCreated UTC: %s\n' "$(git rev-parse HEAD)" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > BACKUP-INFO.txt
+
+      - name: Upload complete source backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mariage-Source-Backup
+          retention-days: 7
+          path: |
+            mariage-app-source-main.zip
+            mariage-app-full-history.bundle
+            BACKUP-INFO.txt
