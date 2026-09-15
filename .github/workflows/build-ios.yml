@@ -1,6 +1,14 @@
 name: Build iOS unsigned
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'assets/**'
+      - 'pubspec.yaml'
+      - 'tool/patch_native.sh'
+      - '.github/workflows/build-ios.yml'
   workflow_dispatch:
 
 jobs:
@@ -8,16 +16,21 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-      - name: Generate native projects
-        run: flutter create --project-name mariage_app --org fr.creemachanson --platforms android,ios .
-      - name: Patch permissions and app metadata
+
+      - name: Generate iOS project
+        run: flutter create --project-name mariage_app --org fr.creemachanson --platforms ios .
+
+      - name: Patch permissions, metadata and icon
         run: bash tool/patch_native.sh
+
       - name: Install dependencies
         run: flutter pub get
+
       - name: Patch FilePicker for Xcode 26
         shell: bash
         run: |
@@ -63,8 +76,13 @@ jobs:
 
           print(f'FilePicker Swift files found: {len(swift_files)}; patched: {changed}')
           PY
+
+      - name: Analyze app code
+        run: flutter analyze lib
+
       - name: Prepare iOS project
         run: flutter build ios --release --config-only --no-codesign
+
       - name: Build iOS app without signing
         run: |
           xcodebuild \
@@ -81,14 +99,16 @@ jobs:
             build
           mkdir -p build/ios/iphoneos
           cp -R build/ios_unsigned/Build/Products/Release-iphoneos/Runner.app build/ios/iphoneos/
+
       - name: Package unsigned IPA
         run: |
           rm -rf Payload
           mkdir -p Payload
           cp -R build/ios/iphoneos/Runner.app Payload/
-          zip -r Mariage-iOS-unsigned.ipa Payload
+          zip -r Mariage-Emmanuel-et-Jennifer-iOS-unsigned.ipa Payload
+
       - name: Upload iOS build
         uses: actions/upload-artifact@v4
         with:
           name: Mariage-iOS-unsigned
-          path: Mariage-iOS-unsigned.ipa
+          path: Mariage-Emmanuel-et-Jennifer-iOS-unsigned.ipa
