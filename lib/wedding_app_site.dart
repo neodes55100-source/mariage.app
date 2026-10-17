@@ -622,14 +622,27 @@ class _WeddingShellState extends State<WeddingShell>
   }
 
   Future<void> _finishOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_onboardingKey, true);
-    if (!mounted) return;
-    setState(() {
-      _onboardingDone = true;
-      _onboardingStep = 0;
-      _tab = 0;
-    });
+    if (mounted) {
+      setState(() {
+        _onboardingDone = true;
+        _onboardingStep = 0;
+        _tab = 0;
+        _message = '';
+      });
+    }
+
+    // La navigation ne doit jamais attendre le stockage local.
+    // Si SharedPreferences est lent ou indisponible, l'utilisateur peut quand
+    // même entrer immédiatement dans l'application.
+    try {
+      final prefs = await SharedPreferences.getInstance()
+          .timeout(const Duration(seconds: 2));
+      await prefs
+          .setBool(_onboardingKey, true)
+          .timeout(const Duration(seconds: 2));
+    } catch (error) {
+      debugPrint('Sauvegarde onboarding différée: $error');
+    }
   }
 
   Future<String?> _guestName() async {

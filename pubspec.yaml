@@ -1,7 +1,7 @@
 name: mariage_app
 description: Application de partage photo et vidéo du mariage Emmanuel & Jennifer.
 publish_to: 'none'
-version: 1.3.2+6
+version: 1.3.3+7
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
