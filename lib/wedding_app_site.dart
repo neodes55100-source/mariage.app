@@ -21,7 +21,7 @@ const _olive = Color(0xFF78823C);
 const _heroUrl =
     'https://mariage.creemachanson.com/assets/img/couple-hero-design2.jpg';
 const _ringsUrl =
-    'https://mariage.creemachanson.com/assets/img/rings-design2-final-20260914.png';
+    'https://mariage.creemachanson.com/assets/img/rings-hero-premium.png';
 const _logoUrl =
     'https://mariage.creemachanson.com/assets/img/logo-creemachanson.jpg';
 
@@ -235,21 +235,21 @@ class _WeddingShellState extends State<WeddingShell>
               children: [
                 if (!compact)
                   Transform.translate(
-                    offset: const Offset(0, -32),
+                    offset: const Offset(0, -20),
                     child: SizedBox(
-                      width: 205,
-                      height: 115,
+                      width: 280,
+                      height: 187,
                       child: _networkImage(_ringsUrl),
                     ),
                   ),
                 if (compact)
                   SizedBox(
-                    width: 140,
-                    height: 76,
+                    width: 170,
+                    height: 113,
                     child: _networkImage(_ringsUrl),
                   ),
                 Transform.translate(
-                  offset: Offset(0, compact ? 0 : -31),
+                  offset: Offset(0, compact ? 0 : -19),
                   child: Column(
                     children: [
                       Text(
