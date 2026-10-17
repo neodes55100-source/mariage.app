@@ -121,7 +121,25 @@ class _WeddingShellState extends State<WeddingShell>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _load();
+
+    _load().catchError((Object error, StackTrace stackTrace) {
+      debugPrint('Initialisation mariage: $error');
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _showSplash = false;
+      });
+    });
+
+    // Garde-fou : une préférence locale corrompue ou un plugin bloqué ne doit
+    // jamais laisser l'application figée sur l'écran d'introduction.
+    Future<void>.delayed(const Duration(seconds: 4), () {
+      if (!mounted || !_showSplash) return;
+      setState(() {
+        _busy = false;
+        _showSplash = false;
+      });
+    });
   }
 
   @override
