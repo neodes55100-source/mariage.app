@@ -21,7 +21,7 @@ const _olive = Color(0xFF78823C);
 const _heroUrl =
     'https://mariage.creemachanson.com/assets/img/couple-hero-design2.jpg';
 const _ringsUrl =
-    'https://mariage.creemachanson.com/assets/img/rings-hero-premium.png';
+    'https://mariage.creemachanson.com/assets/img/rings-hero-premium-transparent.png';
 const _logoUrl =
     'https://mariage.creemachanson.com/assets/img/logo-creemachanson.jpg';
 

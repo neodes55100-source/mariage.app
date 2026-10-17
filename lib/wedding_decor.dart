@@ -27,7 +27,7 @@ class SiteRings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.network(
-      'https://mariage.creemachanson.com/assets/img/rings-hero-premium.png',
+      'https://mariage.creemachanson.com/assets/img/rings-hero-premium-transparent.png',
       width: width,
       fit: BoxFit.contain,
       gaplessPlayback: true,
